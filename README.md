@@ -7,7 +7,7 @@ ____
 
 ## Instruction
 ### 1. Install 
-```git clone project ```
+```git clone https://github.com/iobio/geneinfo.db.git ```
 ### 2. Create your virtualenv
 ``` python3 -m venv myenv ```
 ### 3. Install packages and dependencies
