@@ -15,36 +15,36 @@ def process_gencode_gff3(file_path):
     attr_to_columns = annotation.attributes_to_columns()
 
     # Filtered out the rows with gene type
-    filtered_gene_df = attr_to_columns[attr_to_columns["type"] == 'gene']
+    filtered_gene_df = attr_to_columns[attr_to_columns["type"] == 'gene'].copy()
 
     # Filtered out the rows with transcript type
-    filtered_transcript_df = attr_to_columns[attr_to_columns["type"] == 'transcript']
+    filtered_transcript_df = attr_to_columns[attr_to_columns["type"] == 'transcript'].copy()
 
     # Create a new column 'transcripts' 
-    filtered_gene_df.loc[:,'transcripts'] = None
+    filtered_gene_df['transcripts'] = None
 
     # Mapping gene_name to a list of transcript_ids
     transcript_dict = filtered_transcript_df.groupby('gene_name')['transcript_id'].apply(list).to_dict()
 
-    filtered_gene_df.loc[:,'transcripts'] = filtered_gene_df['gene_name'].map(transcript_dict)
+    filtered_gene_df['transcripts'] = filtered_gene_df['gene_name'].map(transcript_dict)
 
-    filtered_gene_df.loc[:,'chr'] = filtered_gene_df['seq_id']
+    filtered_gene_df['chr'] = filtered_gene_df['seq_id']
 
     # Rename columns
     new_column_names = {'source': 'annotation_source', 'type': 'feature_type', 'seq_id':'seqid'}
     filtered_gene_df.rename(columns=new_column_names, inplace=True)
 
     # Created other new Columns
-    filtered_gene_df.loc[:,'source'] = "gencode"
-    filtered_gene_df.loc[:,'species'] = "homo_sapiens"
+    filtered_gene_df['source'] = "gencode"
+    filtered_gene_df['species'] = "homo_sapiens"
 
     if "GRCh38" in annotation.header:
-        filtered_gene_df.loc[:,'gene_status'] = "."
+        filtered_gene_df['gene_status'] = "."
         
     if "GRCh37" in annotation.header:
-        filtered_gene_df.loc[:,'build'] = "GRCh37"
+        filtered_gene_df['build'] = "GRCh37"
     else:
-        filtered_gene_df.loc[:,'build'] = "GRCh38"
+        filtered_gene_df['build'] = "GRCh38"
         
 
     # List of columns to keep
@@ -60,37 +60,37 @@ def process_gencode_gff3(file_path):
     new_column_names = {'source': 'annotation_source', 'type': 'feature_type', 'seq_id':'seqid'}
     filtered_transcript_df.rename(columns=new_column_names, inplace=True)
 
-    filtered_transcript_df.loc[:,'chr'] = filtered_transcript_df['seqid']
+    filtered_transcript_df['chr'] = filtered_transcript_df['seqid']
 
     # Created other new Columns
-    filtered_transcript_df.loc[:,'source'] = "gencode"
-    filtered_transcript_df.loc[:,'species'] = "homo_sapiens"
+    filtered_transcript_df['source'] = "gencode"
+    filtered_transcript_df['species'] = "homo_sapiens"
 
     # Create a new column 'features' 
-    filtered_transcript_df.loc[:,'features'] = None
+    filtered_transcript_df['features'] = None
 
     if "GRCh38" in annotation.header:
         filtered_transcript_df['transcript_status'] = "."
         
     if "GRCh37" in annotation.header:
-        filtered_transcript_df.loc[:,'build'] = "GRCh37"
+        filtered_transcript_df['build'] = "GRCh37"
     else:
-        filtered_transcript_df.loc[:,'build'] = "GRCh38"
+        filtered_transcript_df['build'] = "GRCh38"
 
     # List of columns to keep
     columns_to_keep = ['chr', 'annotation_source', 'feature_type', 'start', 'end', 'score', 'strand', 'phase', 
                     'transcript_id', 'gene_name', 'transcript_type', 'transcript_status', 'level', 'features',
                     'source', 'seqid', 'build', 'species']
 
-    filtered_transcript_df = filtered_transcript_df[columns_to_keep]
+    filtered_transcript_df = filtered_transcript_df[columns_to_keep].copy()
 
     #Filter out the rows by type column with values: 'exon','CDS','stop_codon','start_codon' 'UTR' 
     feature_type_to_keep = [ 'exon','CDS','stop_codon','start_codon','UTR']
 
-    filtered_feature_type_df = attr_to_columns[attr_to_columns['type'].isin(feature_type_to_keep)] 
+    filtered_feature_type_df = attr_to_columns[attr_to_columns['type'].isin(feature_type_to_keep)].copy()
 
     # filtered_feature_type_df['chr'] = filtered_feature_type_df['seq_id'].copy()
-    filtered_feature_type_df.loc[:,'chr'] = filtered_feature_type_df['seq_id']
+    filtered_feature_type_df['chr'] = filtered_feature_type_df['seq_id']
 
 
 

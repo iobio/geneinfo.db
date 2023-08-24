@@ -51,9 +51,9 @@ def process_refseq_gff(file_path):
     filtered_gene_df['level'] = "."
         
     if "GRCh37" in annotation.header:
-        filtered_gene_df['build'] = "GRCH37"
+        filtered_gene_df['build'] = "GRCh37"
     else:
-        filtered_gene_df['build'] = "GRCH38"
+        filtered_gene_df['build'] = "GRCh38"
         
 
     # List of columns to keep

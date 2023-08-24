@@ -2,3 +2,4 @@ data
 .env
 gene.iobio.db
 .DS_Store
+__pycache__

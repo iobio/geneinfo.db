@@ -11,7 +11,17 @@ from mane_transcript_update import process_mane_gff
 def create_database(db_name):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
+
     sql_cmd = '''
+                DROP TABLE IF EXISTS genes;
+                DROP TABLE IF EXISTS transcripts;
+                DROP TABLE IF EXISTS xref_transcript;
+                DROP TABLE IF EXISTS mane_transcripts;
+
+                '''
+    c.executescript(sql_cmd)
+
+    sql_cmd_2 = '''
                 CREATE TABLE IF NOT EXISTS genes
                 (chr text, annotation_source text, feature_type text, start int, end int, score text, strand text, phase text, gene_name text, gene_type text, gene_status text, level int, transcripts text, source text, seqid text, species text, build text);
 
@@ -35,7 +45,7 @@ def create_database(db_name):
 
               '''
     
-    c.executescript(sql_cmd)
+    c.executescript(sql_cmd_2)
  
     conn.commit()
     conn.close()
@@ -96,6 +106,7 @@ def insert_data_into_database(db_name, genes_csv, transcripts_csv):
     # write the data to a sqlite table
     genes.to_sql('genes', conn, if_exists='append', index = False)
     transcripts.to_sql('transcripts', conn, if_exists='append', index=False)
+
     conn.commit()
     conn.close()
 
