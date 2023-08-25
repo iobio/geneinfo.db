@@ -85,14 +85,14 @@ def process_gencode_gff3(file_path):
     filtered_transcript_df = filtered_transcript_df[columns_to_keep].copy()
 
     #Filter out the rows by type column with values: 'exon','CDS','stop_codon','start_codon' 'UTR' 
-    feature_type_to_keep = [ 'exon','CDS','stop_codon','start_codon','UTR']
+    feature_type_to_keep = [ 'exon','CDS','stop_codon','start_codon','UTR','three_prime_UTR','five_prime_UTR']
 
     filtered_feature_type_df = attr_to_columns[attr_to_columns['type'].isin(feature_type_to_keep)].copy()
+    filtered_feature_type_df.loc[filtered_feature_type_df['type'] == 'three_prime_UTR', 'type'] = 'UTR'
+    filtered_feature_type_df.loc[filtered_feature_type_df['type'] == 'five_prime_UTR', 'type'] = 'UTR'
+   
 
-    # filtered_feature_type_df['chr'] = filtered_feature_type_df['seq_id'].copy()
     filtered_feature_type_df['chr'] = filtered_feature_type_df['seq_id']
-
-
 
     # Rename columns
     new_column_names = {'source': 'annotation_source', 'type': 'feature_type', 'seq_id':'seqid'}
