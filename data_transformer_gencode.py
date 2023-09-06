@@ -4,6 +4,7 @@
 import pandas as pd 
 import gffpandas.gffpandas as gffpd
 import os
+import json
 
 def process_gencode_gff3(file_path):
 
@@ -28,6 +29,9 @@ def process_gencode_gff3(file_path):
 
     filtered_gene_df['transcripts'] = filtered_gene_df['gene_name'].map(transcript_dict)
 
+    # Convert the list of transcripts to a json string
+    filtered_gene_df['transcripts'] = filtered_gene_df['transcripts'].apply(lambda x: json.dumps(x))
+    
     filtered_gene_df['chr'] = filtered_gene_df['seq_id']
 
     # Rename columns
@@ -54,7 +58,7 @@ def process_gencode_gff3(file_path):
 
     filtered_gene_df_final = filtered_gene_df[columns_to_keep]
     filtered_gene_df_final.to_csv(output_file_gene)
-    print("Writing gene file done!")
+    print(str(base_file_name) + "_gene file writing done!")
 
     # Rename columns
     new_column_names = {'source': 'annotation_source', 'type': 'feature_type', 'seq_id':'seqid'}
@@ -113,9 +117,12 @@ def process_gencode_gff3(file_path):
     # Map the 'features' column using the 'transcript_id'
     filtered_transcript_df['features'] = filtered_transcript_df['transcript_id'].map(features_dict)
 
+    # Convert the list of features to a json string
+    filtered_transcript_df['features'] = filtered_transcript_df['features'].apply(lambda x: json.dumps(x))
+
     filtered_transcript_df.to_csv(output_file_transcript)
 
-    print("Writing transcript file done!")
+    print(str(base_file_name) + "_transcript file writing done!")
 
     return output_file_gene, output_file_transcript
 

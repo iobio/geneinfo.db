@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import json
 import pandas as pd 
 import gffpandas.gffpandas as gffpd
 import os
@@ -36,6 +37,9 @@ def process_refseq_gff(file_path):
 
 
     filtered_gene_df['transcripts'] = filtered_gene_df['gene'].map(transcript_dict)
+
+    # Convert the list of transcripts to a json string
+    filtered_gene_df['transcripts'] = filtered_gene_df['transcripts'].apply(lambda x: json.dumps(x))
 
     filtered_gene_df['chr'] = filtered_gene_df['seq_id']
 
@@ -80,7 +84,7 @@ def process_refseq_gff(file_path):
     filtered_gene_df_final['chr'] = filtered_gene_df_final['seqid'].map(seqid_to_chr)
 
     filtered_gene_df_final.to_csv(output_file_gene)
-    print("Writing gene file done!")
+    print(str(base_file_name) + "_gene file writing done!")
 
 
     # Rename columns
@@ -183,14 +187,17 @@ def process_refseq_gff(file_path):
 
     # Group by 'transcript_id' and create a dictionary of features for each transcript
     features_dict = filtered_feature_utr_df.groupby('transcript_id')[feature_columns].apply(lambda x: x.to_dict('records')).to_dict()
-
+    
     # Map the 'features' column using the 'transcript_id'
     filtered_transcript_df['features'] = filtered_transcript_df['transcript_id'].map(features_dict)
 
+    # Convert the list of features to a json string
+    filtered_transcript_df['features'] = filtered_transcript_df['features'].apply(lambda x: json.dumps(x))
+   
     filtered_transcript_df['feature_type'] = "transcript"
 
     filtered_transcript_df.to_csv(output_file_transcript)
 
-    print("Writing transcript file done!")
+    print(str(base_file_name) + "_transcript file writing done!")
 
     return output_file_gene, output_file_transcript
