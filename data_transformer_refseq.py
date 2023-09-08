@@ -73,8 +73,14 @@ def process_refseq_gff(file_path):
         file_path_ = 'data/GCF_000001405.25_GRCh37.p13_assembly_report.txt'
     else:
         file_path_ = 'data/GCF_000001405.40_GRCh38.p14_assembly_report.txt'
-    columns_to_read = [6, 9]  # Index of the 7th and 10th columns 
+    columns_to_read = [1, 6, 9]  # Index of the 1st, 7th and 10th columns 
     mapping_df = pd.read_csv(file_path_, comment='#', delimiter='\t', usecols=columns_to_read, header=None)
+
+    specific_values_to_exclude = ['fix-patch', 'novel-patch']
+
+    mapping_df = mapping_df[~mapping_df[1].isin(specific_values_to_exclude)]
+
+    mapping_df = mapping_df.loc[:, [6,9]]
 
     column_names = ['seqid', 'chr']
     mapping_df.columns = column_names
