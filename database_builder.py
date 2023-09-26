@@ -4,6 +4,7 @@ import pandas as pd
 from data_transformer_refseq import process_refseq_gff
 from data_transformer_gencode import process_gencode_gff3
 from mane_transcript_update import process_mane_gff
+import time
 
 
 
@@ -23,11 +24,11 @@ def create_database(db_name):
 
     sql_cmd_2 = '''
                 CREATE TABLE IF NOT EXISTS genes
-                (chr text, annotation_source text, feature_type text, start int, end int, score text, strand text, phase text, gene_name text, gene_type text, gene_status text, level int, transcripts text, source text, seqid text, species text, build text);
+                (chr text, annotation_source text, feature_type text, start int, end int, score text, strand text, phase text, gene_name text, gene_type text, gene_status text, level int, transcripts text, source text, seqid text, species text, build text, gene_key text);
 
                 CREATE INDEX IF NOT EXISTS gene_name ON genes (gene_name);
 
-                CREATE TABLE IF NOT EXISTS transcripts (chr text, annotation_source text, feature_type text, start int, end int, score text, strand text, phase text, transcript_id text, gene_name text, transcript_type text, transcript_status text, level int, features text, source text, seqid text, build text, species text);
+                CREATE TABLE IF NOT EXISTS transcripts (chr text, annotation_source text, feature_type text, start int, end int, score text, strand text, phase text, transcript_id text, gene_name text, transcript_type text, transcript_status text, level int, features text, source text, seqid text, build text, species text, gene_key text);
 
                 CREATE INDEX IF NOT EXISTS transcript_id on transcripts (transcript_id);
 
@@ -113,6 +114,7 @@ def insert_data_into_database(db_name, genes_csv, transcripts_csv):
 
 def main():
 
+    start = time.time()
     print("Building database..")
 
     # genes_v19_gencode = 'data/gencode.v19.annotation_gene.csv'
@@ -140,20 +142,41 @@ def main():
     mane_gff_file_path = "data/MANE.GRCh38.v1.0.ensembl_genomic.gff"
     shell_script_path = "extract_mane_transcripts.sh"
 
+    print("process gff")
     genes_v19_gencode, transcripts_v19_gencode = process_gencode_gff3(file_path_1)
     genes_v41_gencode, transcripts_v41_gencode = process_gencode_gff3(file_path_2)
     genes_GRCh37_refseq, transcripts_GRCh37_refseq = process_refseq_gff(file_path_3)
     genes_GRCh38_refseq, transcripts_GRCh38_refseq = process_refseq_gff(file_path_4)
+
+    end1 = time.time()
+    print("\n\nelapsed seconds", round(end1-start,2))
+    print("process mane_select")
+
     process_mane_gff(mane_gff_file_path, shell_script_path)
   
+    end2 = time.time()
+    print("\n\nelapsed seconds", round(end2-end1,2))
+    print("create database")
     create_database(db_name)
+    
+    end3 = time.time()
+    print("\n\nelapsed seconds", round(end3-end2,2))
+    print("populate db")
+
     insert_data_into_database(db_name, genes_v19_gencode, transcripts_v19_gencode)
     insert_data_into_database(db_name, genes_v41_gencode, transcripts_v41_gencode)
     insert_data_into_database(db_name, genes_GRCh37_refseq, transcripts_GRCh37_refseq)
     insert_data_into_database(db_name, genes_GRCh38_refseq, transcripts_GRCh38_refseq)
+
+    end4 = time.time()
+    print("\n\nelapsed seconds", round(end4-end3,2))
+
     update_mane_select_transcripts(db_name, mane_transcrpts)
+    end5 = time.time()
+    print("\n\nelapsed seconds", round(end5-end4,2))
     
     print("Database built successfully!")
+    print("\n\ntotal elapsed seconds", round(end5-start,2))
 
 if __name__ == '__main__':
     main()
