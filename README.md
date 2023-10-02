@@ -11,6 +11,7 @@ ____
 ``` cd your project directory```
 ### 2. Create your virtualenv
 ``` python3 -m venv myenv ```
+``` source myenv/bin/activate ```
 ### 3. Install packages and dependencies
 ``` pip3 install -r requirements.txt```
 ### 4. Run
