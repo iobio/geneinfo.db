@@ -10,23 +10,33 @@ def download_and_extract_files(ftp_server, remote_paths, local_folder):
         filename = os.path.basename(remote_path)
         local_path = os.path.join(local_folder, filename)
 
-        # Download file
-        with open(local_path, 'wb') as local_file:
-            ftp.retrbinary('RETR ' + remote_path, local_file.write)
-        
-        if remote_path.endswith('.gz'):
+        file_to_check = None
+        if local_path.endswith(".gz"):
+          file_to_check = local_path.split(".gz")[0]
+        else:
+          file_to_check = local_path
 
-            # Extract the Gzip file contents
-            extracted_path = os.path.join(local_folder, os.path.splitext(filename)[0])
-            
-            with gzip.open(local_path, 'rb') as gzip_file:
-                extracted_content = gzip_file.read()
+        if not os.path.exists(local_path) and not os.path.exists(file_to_check):
+          print("Downloading ", filename)
+          # Download file
+          with open(local_path, 'wb') as local_file:
+              ftp.retrbinary('RETR ' + remote_path, local_file.write)
 
-            # Write the extracted file
-            with open(extracted_path, 'wb') as extracted_file:
-                extracted_file.write(extracted_content)
+          if remote_path.endswith('.gz'):
 
-            os.remove(local_path) # Remove the Gzip file
+              # Extract the Gzip file contents
+              extracted_path = os.path.join(local_folder, os.path.splitext(filename)[0])
+
+              with gzip.open(local_path, 'rb') as gzip_file:
+                  extracted_content = gzip_file.read()
+
+              # Write the extracted file
+              with open(extracted_path, 'wb') as extracted_file:
+                  extracted_file.write(extracted_content)
+
+              os.remove(local_path) # Remove the Gzip file
+        else:
+          print("Skipping download of " + file_to_check)
 
     ftp.quit()
 
@@ -36,10 +46,9 @@ if __name__ == "__main__":
 
     ftp_server1 = 'ftp.ebi.ac.uk'
     ftp_server2 = 'ftp.ncbi.nlm.nih.gov'
-
     gencode_remote_paths = [
         '/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gff3.gz',
-        '/pub/databases/gencode/Gencode_human/release_41/gencode.v41.annotation.gff3.gz',
+        '/pub/databases/gencode/Gencode_human/release_44/gencode.v44.basic.annotation.gff3.gz',
     ]
 
     refseq_remote_paths = [
@@ -68,5 +77,11 @@ if __name__ == "__main__":
     download_and_extract_files(ftp_server2, refseq_remote_paths, local_folder)
     download_and_extract_files(ftp_server2, mane_remote_paths, local_folder)
     download_and_extract_files(ftp_server2, refseq_assembly_reports_remote_paths, local_folder)
-    print("Files downloaded successfully!")
+
+    # Download hgnc genes and gene aliases
+    hgnc_remote_path =  '/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt'
+    download_and_extract_files(ftp_server1, [hgnc_remote_path], local_folder)
+
+
+    print("\n\nFiles downloaded successfully.")
 
