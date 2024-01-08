@@ -4,70 +4,97 @@ import sqlite3
 import pandas as pd
 import json
 
-
-# Open a db connection
-con = sqlite3.connect("gene.iobio.db")
-
-
-#
-# 
-# Create new genes.json based on gene.iobio.db genes
 #
 #
-
-chromosomes = "('chr1', 'chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY', 'chrM')"
+# Create new genes.json based on gene.lookup.db genes
+#
+#
 
 #
 # Run a query
 #
-def run_query(stmt):
-    cur = con.cursor()
+def run_query(conn, stmt):
+    cur = conn.cursor()
     res = cur.execute(stmt)
     results = res.fetchall()
     return results
 
-#
-# Keep track off all of the warnings encounted for each gene
-#
-def load_error_gene(error_gene_map, gene_name, source, error):
-
-    error_obj = error_gene_map.get(gene_name, {"gencode": [], "refseq": []})
-    error_obj[source].append(error)
 
 
-
+# Open a db connection
+conn1 = sqlite3.connect("gene.iobio.db")
 
 #
 # Create a gene map based on the sql query that gets
-# all distinct entries of gene name, build, and source
+# all distinct entries of gene symbol, build, and source
+# as well as all distinct entries for alias_symbol,
+# build, and source
 #
-print("running db query", flush=True)
-stmt = "SELECT distinct gene_name, source, build, group_concat(distinct chr)  from genes GROUP BY gene_name, build, source"
-results = run_query(stmt)
-print("number of rows", len(results), flush=True)
+stmt =  '''
+        SELECT
+            g.gene_name,
+            g.build,
+            g.source,
+            LENGTH(g.transcripts) as transcript_count,
+            gs.gene_symbol,
+            GROUP_CONCAT(ga.alias_symbol) AS aliases
+        FROM genes g
+        LEFT JOIN gene_symbol gs
+          ON g.gene_symbol = gs.gene_symbol
+        LEFT JOIN gene_alias ga
+          ON gs.gene_symbol = ga.gene_symbol and ga.alias_symbol != g.gene_name
+        GROUP BY g.gene_name, g.source, g.build;
+         '''
+
+results = run_query(conn1, stmt)
 
 
 gene_map = {}
 gene_names = [];
+count = 0
 for row in results:
-    gene_name = row[0]
-    source = row[1]
-    build = row[2]
-    chroms = row[3]
+    gene_name        = row[0]
+    build            = row[1]
+    source           = row[2]
+    transcript_count = row[3]
+    gene_symbol      = row[4]
+    aliases          = row[5]
+
+    if gene_name is None:
+        print("Warning, invalid gene name", row)
 
     if gene_name in gene_map:
-        gene = gene_map[gene_name] 
+        gene = gene_map[gene_name]
     else:
-        gene = { 
-                'GRCh37': {'gencode': 0, 'refseq': 0}, 
-                'GRCh38': {'gencode': 0, 'refseq': 0}
+        gene = {
+                'GRCh37': {'gencode': 0, 'refseq': 0},
+                'GRCh38': {'gencode': 0, 'refseq': 0},
                 }
         gene_map[gene_name] = gene
 
-    gene[build][source] = len(chroms.split(","))
-    
-    if gene_name not in gene_names:
+    if build is not None and source is not None and transcript_count is not None:
+        gene[build][source] = transcript_count
+
+    # Add the gene_symbol to the aliases (if the gene_symbol is
+    # different than the gene name)
+    if gene_symbol is not None and gene_symbol != gene_name:
+        if aliases is None:
+            aliases = gene_symbol
+        elif gene_symbol not in aliases:
+            aliases = gene_symbol + "," + aliases
+
+    if aliases is not None and len(aliases) > 0:
+        gene['aliases'] = aliases
+
+    if gene_name is not None and gene_name not in gene_names:
         gene_names.append(gene_name)
+
+    #if len(gene_names) > 10000:
+    #    break
+
+    count += 1
+
+
 
 
 
@@ -80,25 +107,19 @@ for gene_name in gene_names:
     gene_obj = gene_map.get(gene_name, {})
 
 
-    # if the gene exists in both builds and sources and has no errors,
-    # create a simple object with gene_name
-    if gene_obj['GRCh37']['gencode'] == 1 and gene_obj['GRCh37']['refseq'] == 1 and gene_obj['GRCh38']['gencode'] == 1 and gene_obj['GRCh38']['refseq'] == 1:
-        the_gene_obj = {"gn": gene_name}
-        #the_gene_obj = [gene_name]
-        #the_gene_obj = gene_name
-    # otherwise, create a more complex object that indicates which
-    # sources and build have this gene and the errors for each
-    # source and build of the gene.
-    else:
-        the_gene_obj = {"gn": gene_name, "d": []}
+    # create an object that indicates which
+    # sources and build have this gene
+    the_gene_obj = {"gn": gene_name, "d": []}
+    if 'aliases' in gene_obj:
+        the_gene_obj['a'] = gene_obj['aliases']
 
-        build_info = []
-        for build in ['GRCh37', 'GRCh38']:
-            source_info = []
-            for source in ['gencode', 'refseq']:                
-                source_info.append(gene_obj[build][source])
-            build_info.append(source_info)
-        the_gene_obj["d"] = build_info
+    build_info = []
+    for build in ['GRCh37', 'GRCh38']:
+        source_info = []
+        for source in ['gencode', 'refseq']:
+            source_info.append(gene_obj[build][source])
+        build_info.append(source_info)
+    the_gene_obj["d"] = build_info
 
 
     gene_list.append(the_gene_obj)
