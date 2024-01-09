@@ -3,3 +3,4 @@ data
 gene.iobio.db
 .DS_Store
 __pycache__
+genes.json
