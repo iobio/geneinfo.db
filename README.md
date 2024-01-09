@@ -18,6 +18,6 @@ ____
 ``` Python3 data_downloader.py``` <br>
 ``` Python3 database_builder.py```
 ### 5. To create a new genes.json which is used in the gene.iobio search type-ahead, run the following:
-``` python3 create_genes.json```
+``` python3 create_genes.json``` <br>
 ``` cp genes.json ../gene.iobio/client/data/```
 
